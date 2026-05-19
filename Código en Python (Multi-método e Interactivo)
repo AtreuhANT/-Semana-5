@@ -1,0 +1,108 @@
+Este código utiliza la librería sympy para interpretar dinámicamente cualquier función que ingreses por teclado y calcular su derivada automáticamente para el método de Newton.
+
+import sympy as sp
+import math
+
+def biseccion(f, a, b, tol):
+    if f(a) * f(b) >= 0:
+        return None, 0, "Error: No hay cambio de signo en el intervalo."
+    
+    iteraciones = 0
+    c = a
+    while True:
+        c = (a + b) / 2.0
+        error_actual = abs(f(c))
+        if error_actual < tol:
+            break
+        
+        if f(a) * f(c) < 0:
+            b = c
+        else:
+            a = c
+        iteraciones += 1
+        
+    return c, iteraciones, error_actual
+
+def newton_raphson(f, df, x0, tol):
+    iteraciones = 0
+    x = x0
+    while True:
+        fx = f(x)
+        error_actual = abs(fx)
+        if error_actual < tol:
+            break
+        dfx = df(x)
+        if dfx == 0:
+            return None, iteraciones, "Error: Derivada cero."
+        
+        x = x - fx / dfx
+        iteraciones += 1
+        if iteraciones > 100:
+            return x, iteraciones, "No converge (límite de iteraciones)"
+            
+    return x, iteraciones, error_actual
+
+def secante(f, x0, x1, tol):
+    iteraciones = 0
+    while True:
+        fx0 = f(x0)
+        fx1 = f(x1)
+        error_actual = abs(fx1)
+        
+        if error_actual < tol:
+            return x1, iteraciones, error_actual
+            
+        if fx1 - fx0 == 0:
+            return None, iteraciones, "Error: División por cero."
+            
+        x2 = x1 - fx1 * (x1 - x0) / (fx1 - fx0)
+        x0 = x1
+        x1 = x2
+        iteraciones += 1
+        if iteraciones > 100:
+            return x1, iteraciones, "No converge (límite de iteraciones)"
+
+def main():
+    print("=== RESOLUTOR DE ECUACIONES NO LINEALES ===")
+    print("Métodos: \n1. Bisección \n2. Newton-Raphson \n3. Secante \n4. Comparativo")
+    opcion = input("Seleccione el método (1/2/3/4): ")
+
+    expr_str = input("Ingrese la función f(x) (ej. x*cos(x) - 1): ")
+    
+    # Procesamiento simbólico para evaluar la función y su derivada
+    x_sym = sp.Symbol('x')
+    try:
+        f_sym = sp.sympify(expr_str)
+        df_sym = sp.diff(f_sym, x_sym)
+        # Convertir a funciones evaluables numéricamente
+        f = sp.lambdify(x_sym, f_sym, 'math')
+        df = sp.lambdify(x_sym, df_sym, 'math')
+    except Exception as e:
+        print("Error al procesar la función. Asegúrese de usar sintaxis correcta.")
+        return
+
+    tol_str = input("Ingrese la tolerancia (ej. 1e-6): ")
+    tol = float(tol_str) if tol_str else 1e-6
+
+    if opcion == '1' or opcion == '4':
+        print("\n--- Método de Bisección ---")
+        a = float(input("Ingrese límite inferior (a): "))
+        b = float(input("Ingrese límite superior (b): "))
+        raiz, iters, err = biseccion(f, a, b, tol)
+        print(f"Raíz: {raiz} | Iteraciones: {iters} | Error: {err}")
+
+    if opcion == '2' or opcion == '4':
+        print("\n--- Método de Newton-Raphson ---")
+        x0 = float(input("Ingrese punto semilla (x0): "))
+        raiz, iters, err = newton_raphson(f, df, x0, tol)
+        print(f"Raíz: {raiz} | Iteraciones: {iters} | Error: {err}")
+
+    if opcion == '3' or opcion == '4':
+        print("\n--- Método de la Secante ---")
+        x0 = float(input("Ingrese primer punto semilla (x0): "))
+        x1 = float(input("Ingrese segundo punto semilla (x1): "))
+        raiz, iters, err = secante(f, x0, x1, tol)
+        print(f"Raíz: {raiz} | Iteraciones: {iters} | Error: {err}")
+
+if __name__ == "__main__":
+    main()
